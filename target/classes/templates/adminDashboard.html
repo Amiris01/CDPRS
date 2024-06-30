@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<title>Admin Dashboard</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+      crossorigin="anonymous">
+<link rel="stylesheet" th:href="@{/css/adminDashboard.css}">
+<!--=============== REMIX ICONS ===============-->
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+</head>
+<body>
+<div class="main container">
+    <div class="admin_dashboard row">
+        <div class="admin_sidebar col">
+            <h4 class="admin_title">Admin <i class="ri-admin-fill"></i> Dashboard</h4>
+            <hr class="admin_sidebar_line">
+            <ul class="admin_sidebar_links">
+                <li><a href="#" class="admin_sidebar_link">User List</a></li>
+                <li>
+                    <button type="button" class="admin_sidebar_link" id="addUserBtn">Add user</button>
+                </li>
+                <li>
+                    <form th:action="@{/logout}" method="post" th:hidden="true" name="logoutForm">
+                        <input type="submit" value="Logout" />
+                    </form>
+                    <a href="javascript: document.logoutForm.submit()" class="admin_sidebar_link">
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="admin_main_content col-10">
+            <h4>Table List of user</h4>
+            <p class="update-timestamp">Last Update = <span th:if="${message}" th:text="${message}" class="btn-message"></span> </p>
+            <div class="admin_user_table ">
+                <div class="admin_table_nav">
+                    <div>
+                        <button type="button" class="patientBtn admin_navBtn admin_navBtn_active">Patient</button>
+                        <button type="button" class="doctorBtn admin_navBtn">Doctor</button>
+                        <button type="button" class="adminBtn admin_navBtn">Admin</button>
+                        <button type="button" class="pharmacistBtn admin_navBtn">Pharmacist</button>
+
+                        <button type="button" class="asspatBtn admin_navBtn">Assigned Patient</button>
+                        
+                    </div>
+                </div>
+                <hr class="admin_line">
+
+<!--IZZATI CODE-->
+
+<!--patient table-->
+<div class="user_table tableActive">
+    <!-- search bar patient -->
+    <div style="padding-left: 10;">
+        <input type="text" placeholder="Enter keyword to search" id="search-input-patient" style="width: 50%; padding-left: 10px;" class="search-input">
+    </div>
+    <!-- search bar patient -->
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col" style="width: 2%;" class="text-center">No</th>
+                <th scope="col" style="width: 10%;" class="text-center">User Id</th>
+                <th scope="col" style="width: 15%;" class="text-center">Name</th>
+                <th scope="col" style="width: 15%;" class="text-center">Contact No</th>
+                <th scope="col" style="width: 10%;" class="text-center">Email</th>
+
+                <th scope="col" style="width: 10%;" class="text-center">Emergency contact</th>
+                <th scope="col" style="width: 10%;" class="text-center">Address</th>
+                <th scope="col" style="width: 10%;" class="text-center">Sensor Id</th>
+                <th scope="col" style="width: 30%;" class="text-center">Action</th>
+            </tr>
+        </thead>
+        <tbody id="patientTable" class="patientTable">
+            <!--javascript retrieving all the data from database-->
+            <script th:inline="javascript">
+    /*<![CDATA[*/
+    var patientList = /*[[${patientList}]]*/ [];
+    /*]]>*/
+</script>
+            <tr th:each="patient, stat: ${patientList}">
+                <th class="text-center"scope="row" th:text="${stat.index + 1 + (patientPagination.totalPage * (patientPagination.currentPage - 1))}"></th>
+                <td class="text-center" th:text="${patient.userId}" data-column="userId"></td>
+                <td class="text-center" th:text="${patient.name}" data-column="name"></td>
+                <td class="text-center" th:text="${patient.contact}" data-column="contact"></td>
+                <td class="text-center"th:text="${patient.email}" data-column="email"></td>
+                <td class="text-center" th:text="${patient.emergencyContact}" data-column="emergencyContact"></td>
+                <td class="text-center" th:text="${patient.address}" data-column="address"></td>
+                <td class="text-center"th:text="${patient.sensorDataId}" data-column="sensorDataId"></td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-warning editUserBtn editPatient">Edit</button>
+                    <button type="button" class="btn btn-danger deleteUserBtn">Delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <!-- paging button start -->
+    <!-- Pagination for Patient List -->
+    <div class="d-flex justify-content-center align-items-center">
+        <nav aria-label="Patient Pagination" th:if="${patientPagination.totalPage > 1}">
+            <ul class="pagination">
+                <li class="page-item" th:class="${patientPagination.prevPage < 1 ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/admin?pageNo=1}">&lt;</a>
+                </li>
+                <li th:each="i: ${#numbers.sequence(1, patientPagination.totalPage)}" class="page-item">
+                    <a class="page-link" th:href="@{'/admin?pageNo=' + __${i}__}" th:text="${i}"></a>
+                </li>
+                <li class="page-item" th:class="${patientPagination.nextPage > patientPagination.totalPage} ? 'disabled'">
+                    <a class="page-link" th:href="@{'/admin?pageNo=' + __${patientPagination.totalPage}__}">&gt;</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="d-flex justify-content-center align-items-center bg-primary bg-opacity-25 shadow-lg rounded">
+        <p class="btn"><b>Page: <span th:text="${patientPagination.currentPage}"></span></b></p>
+    </div>
+    <!-- paging button end -->
+</div>
+
+<!-- Your existing HTML code -->
+
+<!--IZZATI CODE-->
+                </div>
+                <!--doctor table-->
+                <div class="user_table">
+                    <!-- search bar doctor -->
+                    <div style="padding-left: 10;">
+                        <input type="text" placeholder="Enter keyword to search" id="search-input-doctor" style="width: 50%; padding-left: 10px;" class="search-input">
+                    </div>
+                    <!-- search bar doctor -->
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col" style="width: 2%;" class="text-center">No</th>
+                            <th scope="col" style="width: 10%;" class="text-center">User Id</th>
+                            <th scope="col" style="width: 15%;" class="text-center">Name</th>
+                            <th scope="col" style="width: 15%;" class="text-center">Contact No</th>
+                           
+                            <th scope="col" style="width: 15%;" class="text-center">Hospital</th>
+                            <th scope="col" style="width: 10%;" class="text-center">Position</th>
+                            <th scope="col" style="width: 50%;" class="text-center">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody id="doctorTable" class="doctorTable">
+                        <!--javascript retrieving all the data from database-->
+                        <tr th:each="doctor, stat: ${doctorPagination.dataToDisplay}">
+                            <th class="text-center" scope="row" th:text="${stat.index + 1 + (doctorPagination.totalPage * (doctorPagination.currentPage - 1))}"></th>
+                            <td class="text-center"th:text="${doctor.userId}" data-column="userId"></td>
+                            <td class="text-center"th:text="${doctor.name}" data-column="name"></td>
+                            <td class="text-center"th:text="${doctor.contact}" data-column="contact"></td>
+                           
+                            <td class="text-center" th:text="${doctor.hospital}" data-column="hospital"></td>
+                            <td class="text-center" th:text="${doctor.position}" data-column="position"></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-warning editUserBtn editDoctor">Edit</button>
+                                <button type="button" class="btn btn-danger deleteUserBtn">Delete</button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <!--IZZATI CODE-->
+                    <!-- paging button start -->
+                    <!-- Pagination for Doctor List -->
+                    <div class="d-flex justify-content-center align-items-center">
+                        <nav aria-label="Doctor Pagination" th:if="${doctorPagination.totalPage > 1}">
+                            <ul class="pagination">
+                                <li class="page-item" th:class="${doctorPagination.prevPage < 1 ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/admin?pageNo=1}">&lt;</a>
+                                </li>
+                                <li th:each="i: ${#numbers.sequence(1, doctorPagination.totalPage)}" class="page-item">
+                                    <a class="page-link" th:href="@{'/admin?pageNo=' + __${i}__}"  th:text="${i}"></a>
+                                </li>
+                                <li class="page-item" th:class="${doctorPagination.nextPage > doctorPagination.totalPage} ? 'disabled'">
+                                    <a class="page-link" th:href="@{'/admin?pageNo=' + __${doctorPagination.totalPage}__}">&gt;</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+
+                    <div class="d-flex justify-content-center align-items-center bg-primary bg-opacity-25 shadow-lg rounded">
+                        <p class="btn"><b>Page: <span th:text="${doctorPagination.currentPage}"></span></b></p>
+                    </div>
+
+                    <!-- paging button end -->
+                </div>
+
+                 <!--pharmacist table-->
+                 <div class="user_table">
+                    <!-- search bar pharmacsit -->
+                    <div style="padding-left: 10;">
+                        <input type="text" placeholder="Enter keyword to search" id="search-input-pharmacist" style="width: 50%; padding-left: 10px;" class="search-input">
+                    </div>
+                    <!-- search bar pharmacist -->
+                    <table class="table table table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col" style="width: 2%;" class="text-center">No</th>
+                            <th scope="col" style="width: 10%;" class="text-center">User Id</th>
+                            <th scope="col" style="width: 15%;" class="text-center">Name</th>
+                            <th scope="col" style="width: 15%;" class="text-center">Contact No</th>
+                            <th scope="col" style="width: 15%;" class="text-center">Email</th>
+
+                            <th scope="col" style="width: 15%;" class="text-center">Hospital</th>
+                            <th scope="col" style="width: 10%;" class="text-center">Position</th>
+                            <th scope="col" style="width: 50%;" class="text-center">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody id="pharmacistTable" class="pharmacistTable">
+                        <!--javascript retrieving all the data from database-->
+                        <tr th:each="pharmacist, stat: ${pharmacistPagination.dataToDisplay}">
+                            <th class="text-center" scope="row" th:text="${stat.index + 1 + (pharmacistPagination.totalPage * (pharmacistPagination.currentPage - 1))}"></th>
+                            <td class="text-center" th:text="${pharmacist.userId}" data-column="userId"></td>
+                            <td class="text-center" th:text="${pharmacist.name}" data-column="name"></td>
+                            <td class="text-center" th:text="${pharmacist.contact}" data-column="contact"></td>
+                            <td class="text-center" th:text="${pharmacist.email}" data-column="email"></td>
+
+                            <td class="text-center" th:text="${pharmacist.hospital}" data-column="hospital"></td>
+                            <td class="text-center" th:text="${pharmacist.position}" data-column="position"></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-warning editUserBtn editPharmacist">Edit</button>
+                                <button type="button" class="btn btn-danger deleteUserBtn">Delete</button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <!-- paging button start -->
+                    <!-- Pagination for Pharmacist List -->
+                    <div class="d-flex justify-content-center align-items-center">
+                        <nav aria-label="Pharmacist Pagination" th:if="${pharmacistPagination.totalPage > 1}">
+                            <ul class="pagination">
+                                <li class="page-item" th:class="${pharmacistPagination.prevPage < 1 ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/admin?pageNo=1}">&lt;</a>
+                                </li>
+                                <li th:each="i: ${#numbers.sequence(1, pharmacistPagination.totalPage)}" class="page-item">
+                                    <a class="page-link" th:href="@{'/admin?pageNo=' + __${i}__}" th:text="${i}"></a>
+                                </li>
+                                <li class="page-item" th:class="${pharmacistPagination.nextPage > pharmacistPagination.totalPage} ? 'disabled'">
+                                    <a class="page-link" th:href="@{'/admin?pageNo=' + __${pharmacistPagination.totalPage}__}">&gt;</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+
+                    <div class="d-flex justify-content-center align-items-center bg-primary bg-opacity-25 shadow-lg rounded">
+                        <p class="btn"><b>Page: <span th:text="${pharmacistPagination.currentPage}"></span></b></p>
+                    </div>
+                    <!-- paging button end -->
+                </div>
+
+                <!--Admin Table-->
+                <div class="user_table">
+                    <!-- search bar admin -->
+                    <div style="padding-left: 10;">
+                        <input type="text" placeholder="Enter keyword to search" id="search-input-admin" style="width: 50%; padding-left: 10px;" class="search-input">
+                    </div>
+                    <!-- search bar admin -->
+                    <!-- search button admin-->
+                    <table class="table table table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col" class="text-center">No</th>
+                            <th scope="col" class="text-center">User Id</th>
+                            <th scope="col" class="text-center">Name</th>
+                            <th scope="col" class="text-center">Contact No</th>
+                           
+                            <th scope="col" class="text-center">Role</th>
+                            <th scope="col" class="text-center">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody id="adminTable">
+                        <!--javascript retrieving all the data from database-->
+                        <tr th:each="admin, stat: ${adminPagination.dataToDisplay}">
+                            <th class="text-center"scope="row" th:text="${stat.index + 1 + (adminPagination.totalPage * (adminPagination.currentPage - 1))}"></th>
+                            <td class="text-center"th:text="${admin.userId}" data-column="userId"></td>
+                            <td class="text-center"th:text="${admin.name}" data-column="name"></td>
+                            <td class="text-center" th:text="${admin.contact}" data-column="contact"></td>
+                           
+                            <td class="text-center" th:text="${admin.role}" data-column="role"></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-warning editUserBtn editDoctor">Edit</button>
+                                <button type="button" class="btn btn-danger deleteUserBtn">Delete</button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <!--IZZATI CODE-->
+                    <!-- paging button start -->
+                    <!-- Pagination for Admin List -->
+                    <div class="d-flex justify-content-center align-items-center">
+                        <nav aria-label="Admin Pagination" th:if="${adminPagination.totalPage > 1}">
+                            <ul class="pagination">
+                                <li class="page-item" th:class="${adminPagination.prevPage < 1 ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/admin?pageNo=1}">&lt;</a>
+                                </li>
+                                <li th:each="i: ${#numbers.sequence(1, adminPagination.totalPage)}" class="page-item">
+                                    <a class="page-link" th:href="@{'/admin?pageNo=' + __${i}__}"  th:text="${i}"></a>
+                                </li>
+                                <li class="page-item" th:class="${adminPagination.nextPage > adminPagination.totalPage} ? 'disabled'">
+                                    <a class="page-link" th:href="@{'/admin?pageNo=' + __${adminPagination.totalPage}__}">&gt;</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+
+                    <div class="d-flex justify-content-center align-items-center bg-primary bg-opacity-25 shadow-lg rounded">
+                        <p class="btn"><b>Page: <span th:text="${adminPagination.currentPage}"></span></b></p>
+                    </div>
+                    <!--IZZATI CODE-->
+                    <!-- paging button end -->
+                </div>
+
+                                  <!--Assigned Patient table-->
+                                  <div class="user_table">
+                                    <table class="table table table-striped">
+                                        <thead>
+                                        <tr>
+                                            <th scope="col" class="text-center">No</th>
+                                            <th scope="col" class="text-center">Assigned by Doctor</th>
+                                            <th scope="col" class="text-center">Patient ID</th>
+                                            <th scope="col" class="text-center">Patient Name</th>
+                                            <th scope="col" class="text-center">Status</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="adminTable">
+                                        <!--javascript retrieving all the data from database-->
+                                        <script>
+                                            
+                                        </script>
+                                        <tr class="text-center" th:each="patient : ${patientList}">
+                                            <th class="text-center" scope="row" th:text="${patientStat.index}+1"></th>
+                                            <td class="text-center" th:text="${patient.assigned_doctor}"></td>
+                                        <td class="text-center" th:text="${patient.userId}"></td>
+                                        <td class="text-center" th:text="${patient.name}"></td>
+                                        <td class="text-center" th:text="${patient.Status}"></td>
+                                            
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+        <!--add user page-->
+        <div class="add_user_page">
+            <div class="add_user_page-content">
+                <h4 class="add_user_page-title">User Form</h4>
+                <h4 class="add_user_page-title">Update User</h4>
+                <form th:action="@{/admin/adduser}"  method="post" name="adduser" id="adduser">
+                    <input type="hidden" class="form-control" id="action" name="action" >
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="userId">User Id</label>
+                            <input type="email" class="form-control" id="userId" name="userId"
+                                   placeholder="Your unique ID">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="userFullName">Name</label>
+                            <input type="text" class="form-control" id="userFullName" name="userFullName" placeholder="Full name">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="user">Password</label>
+                            <input type="text" class="form-control" id="userPassword" name="userPassword" placeholder="User Temp Password">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="user">Email</label>
+                            <input type="text" class="form-control" id="userEmail" name="userEmail" placeholder="User Email">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="contact">Contact</label>
+                        <input type="text" class="form-control" id="contact" name="contact" placeholder="012-3456789">
+                    </div>
+                    
+                    <div class="d-flex justify-content-around pt-2 pb-2">
+                        <div class="form-check radioBtn">
+                            <input class="form-check-input admin" type="radio" name="role" id="admin" value="ADMIN"
+                                   checked>
+                            <label class="form-check-label" for="admin">
+                                Admin
+                            </label>
+                        </div>
+                        <div class="form-check radioBtn">
+                            <input class="form-check-input patient" type="radio" name="role" id="patient"
+                                   value="PATIENT">
+                            <label class="form-check-label" for="patient">
+                                Patient
+                            </label>
+                        </div>
+                        <div class="form-check radioBtn">
+                            <input class="form-check-input doctor" type="radio" name="role" id="doctor" value="DOCTOR">
+                            <label class="form-check-label" for="doctor">
+                                Doctor
+                            </label>
+                        </div>
+                        <div class="form-check radioBtn">
+                            <input class="form-check-input pharmacist" type="radio" name="role" id="pharmacist" value="PHARMACIST">
+                            <label class="form-check-label" for="pharmacist">
+                                Pharmacist
+                            </label>
+                        </div>
+                    </div>
+                    <div class="extraForm form-group">
+                        <div class="form-group">
+                            <label for="address">Address</label>
+                            <input type="text" class="form-control " id="address" name="address"
+                                   placeholder="Current location">
+                        </div>
+                        <div class="form-group">
+                            <label for="emergencyContact">Emergency Contact</label>
+                            <input type="text" class="form-control" id="emergencyContact" name="emergencyContact"
+                                   placeholder="012-3456789">
+                        </div>
+                        <div class="form-group">
+                            <label for="sensorId">Sensor Id</label>
+                            <input type="text" class="form-control" id="sensorId" name="sensorId"
+                                   placeholder="sensorId">
+                        </div>
+                    </div>
+                    <div class="extraForm form-group">
+                        <div class="form-group">
+                            <label for="hospital">Hospital</label>
+                            <input type="text" class="form-control" id="doctorHospital" name="doctorHospital"
+                                   placeholder="Current Hospital">
+                        </div>
+                        <div class="form-group">
+                            <label for="doctorPosition">Position</label>
+                            <input type="text" class="form-control" id="doctorPosition" name="doctorPosition"
+                                   placeholder="Medical officer">
+                        </div>
+                    </div>
+
+                    <div class="extraForm form-group">
+                        <div class="form-group">
+                            <label for="hospital">Hospital</label>
+                            <input type="text" class="form-control" id="pharmacistHospital" name="pharmacistHospital"
+                                   placeholder="Current Hospital">
+                        </div>
+                        <div class="form-group">
+                            <label for="pharmacistPosition">Position</label>
+                            <input type="text" class="form-control" id="pharmacistPosition" name="pharmacistPosition"
+                                   placeholder="Medical officer">
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+
+                
+                <div class="add_user_page-buttons">
+                    <button type="button" class="btn btn-primary confirmBtn" id="confirmAddUserBtn">Confirm</button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtnAddUser">Cancel</button>
+                </div>
+
+            </form>
+            </div>
+        </div>
+
+        <!--delete user confirmation page-->
+        <div class="confirmation_deleteUser_page">
+            <div class="confirmation_deleteUser_page-content">
+                <div>
+                    <h4 class="confirmation_deleteUser_page-title">Confirm delete user?</h4>
+                    <p class="confirmation_deleteUser_page-subtitle">All data will be saved. Any change <br> request
+                        made after this will need <br>to update it manually</p>
+                </div>
+                <div class="confirmation_deleteUser_page-buttons">
+                    <form th:action="@{/admin/deleteuser}" th:method="delete" hidden="true" id="deleteUserForm">
+                        <input type="text" name="userIdToBeDelete" id="userIdToBeDelete">
+                        <input type="text" name="userRoleToBeDelete" id="userRoleToBeDelete">
+                    </form>
+                    <button type="button" class="btn btn-primary confirmBtn" id="confirmDeleteUserBtn">Confirm</button>
+                    <button type="button" class="btn btn-secondary" id="cancelDeleteUserBtn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<script th:src="@{/js/adminDashboard.js}"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Medicine Stock Information</title>
+</head>
+<body>
+
+<h2>Medicine Stock Information</h2>
+
+<table border="1">
+    <thead>
+    <tr>
+        <th>Medicine Name</th>
+        <th>Quantity</th>
+        <th>Stock Status</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="medicineStockInfo : ${medicineStockInfoList}">
+        <td th:text="${medicineStockInfo.medName}"></td>
+        <td th:text="${medicineStockInfo.quantity}"></td>
+        <td th:text="${medicineStockInfo.stockStatus}"></td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
