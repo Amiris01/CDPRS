@@ -1,3 +1,2 @@
-# SHSR
-Smart Health Remote System
-dsdsdsdsd
+# CDPRS
+Common Diseases Prediction Remote System
