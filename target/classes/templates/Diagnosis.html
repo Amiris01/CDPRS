@@ -59,8 +59,28 @@
             </div>
             <div class="col-9">
                 <h1 d-flex justify-content-start style="margin-bottom:20px;">Prediction History</h1>
-                <!-- insert code here -->
-                <div class="table-responsive">
+
+                <!-- search button -->
+                <form th:action="@{/Health-status/Diagnosis}" method="get" class="row g-3">
+                    <input type="hidden" name="patientId" th:value="${patient.userId}">
+                    <input type="hidden" name="doctorId" th:value="${doctor.userId}">
+                    <input type="hidden" name="pageNo" th:value="${currentPage}">
+                    <input type="hidden" name="pageSize" th:value="${pageSize}">
+                    <div class="col-md-6">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="date" id="startDate" name="startDate" class="form-control" th:value="${startDate}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="date" id="endDate" name="endDate" class="form-control" th:value="${endDate}">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </div>
+                </form>
+                <!-- search button end -->
+
+                <div class="table-responsive" style="margin-top: 20px;">
                     <table class="table table-bordered" style="border:1px solid black;">
                         <thead>
                             <tr>
@@ -73,7 +93,7 @@
                             <tr th:if="${#lists.isEmpty(predictionList)}">
                                 <td colspan="3" class="text-center">No prediction made</td>
                             </tr>
-                            <tr th:each="prediction : ${predictionList}">
+                            <tr th:each="prediction, stat : ${predictionList}">
                                 <td class="timestamp" th:text="${prediction.timestamp}"></td>
                                 <td>
                                     <div class="symptoms-list" th:text="${prediction.symptomsList}"></div>
@@ -84,22 +104,36 @@
                                 </td>
                             </tr>
                         </tbody>
-                        
                     </table>
                 </div>
-                    <div style="margin-left: -15px;">
-                      <form th:action="@{/patient/backDashboard}"   method="post">
+
+                <!-- Pagination Controls -->
+                <nav aria-label="Prediction history navigation" style="margin-top: 20px;">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled' : ''">
+                            <a class="page-link" th:href="@{/Health-status/Diagnosis(patientId=${patient.userId}, doctorId=${doctor.userId},pageNo=${currentPage - 1}, pageSize=${pageSize}, startDate=${startDate}, endDate=${endDate})}">Previous</a>
+                        </li>
+                        <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" th:classappend="${i == currentPage} ? 'active' : ''">
+                            <a class="page-link" th:href="@{/Health-status/Diagnosis(patientId=${patient.userId}, doctorId=${doctor.userId},pageNo=${i}, pageSize=${pageSize}, startDate=${startDate}, endDate=${endDate})}" th:text="${i + 1}"></a>
+                        </li>
+                        <li class="page-item" th:classappend="${currentPage + 1 == totalPages} ? 'disabled' : ''">
+                            <a class="page-link" th:href="@{/Health-status/Diagnosis(patientId=${patient.userId}, doctorId=${doctor.userId}, pageNo=${currentPage + 1}, pageSize=${pageSize}, startDate=${startDate}, endDate=${endDate})}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div style="margin-left: -15px; margin-top: 20px;">
+                    <form th:action="@{/patient/backDashboard}" method="post">
                         <div>
                             <input type="hidden" th:value="${patient.userId}" th:name="patientId">
                             <input type="hidden" th:value="${doctor.userId}" th:name="doctorId">
                         </div>
-
-                        <div list-group-item class="m-3 d-flex justify-content-left align-items-center " >
-                            <input class="btn btn-secondary confirmBtn " value="Back" type="submit">
+                        <div list-group-item class="m-3 d-flex justify-content-left align-items-center">
+                            <input class="btn btn-secondary confirmBtn" value="Back" type="submit">
                         </div>
                     </form>
-                    </div>
                 </div>
+
             </div>
         </div>
     </div>
@@ -112,7 +146,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.timestamp').forEach(function(element) {
             const timestamp = element.textContent;
-            const formattedTimestamp = new Date(timestamp).toLocaleString("en-US", {
+            const formattedTimestamp = new Date(timestamp).toLocaleString("en-GB", {
                 year: "numeric",
                 month: "2-digit",
                 day: "2-digit",
@@ -147,13 +181,7 @@
             element.innerHTML = `<ul>${formattedDiagnosisProbabilities}</ul>`;
         });
     });
-
-    function handleFormSubmit() {
-        // Add your form submission logic here if needed
-        // Redirect the user to the desired page (replace with the actual URL)
-        window.location.href = 'http://localhost:8080/patient/backDashboard';
-        return false; // Prevent the form from submitting through regular submission
-    }
 </script>
+
 </body>
 </html>

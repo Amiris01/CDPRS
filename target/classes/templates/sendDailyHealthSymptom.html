@@ -49,7 +49,7 @@
                             </a>
                         </li>
                         <li>
-                            <a th:href="@{Diagnosis(patientId=${patient.userId}, doctorId=${doctor.userId})}" class="nav-link link-dark f">Prediction History</a>
+                            <a th:href="@{Diagnosis(patientId=${patient.userId}, doctorId=${doctor.userId}, pageNo=0)}" class="nav-link link-dark f">Prediction History</a>
                         </li>
                         <li>
                             <form th:action="@{/logout}" method="post" hidden="true" name="logoutForm">
@@ -121,9 +121,12 @@
                                         <input type="hidden" th:value="${patient.userId}" th:name="patientId">
                                     
                                         <div class="text-center">
-                                            <button type="button" class="btn btn-primary" id="addSymptomBtn">Add Symptom</button>
-                                            <input class="btn btn-primary confirmBtn" type="submit" value="Send Symptoms">
+                                            <button type="button" class="btn btn-primary" id="addSymptomBtn" th:disabled="${hasSubmittedToday}">Add Symptom</button>
+                                            <input class="btn btn-primary confirmBtn" type="submit" value="Send Symptoms" th:disabled="${hasSubmittedToday}">
                                         </div>
+                                        <div th:if="${hasSubmittedToday}" class="text-center mt-3">
+                                            <p class="text-danger">You have already submitted your symptoms for today.</p>
+                                        </div>                                        
                                     </div>
                                 </form>
                                 <form th:action="@{/patient/backDashboard}"   method="post">
@@ -148,11 +151,43 @@
         </div>
     </div>
 </div>
+
+<!-- Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmationModalLabel">Confirm Submission</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to submit your symptoms for today?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="confirmSubmitBtn">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>  
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+    
+        // Show modal when the "Send Symptoms" button is clicked
+    document.querySelector('.confirmBtn').addEventListener('click', function(event) {
+        event.preventDefault();
+        const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+        modal.show();
+    });
+
+    // Handle the confirmation button click in the modal
+    document.getElementById('confirmSubmitBtn').addEventListener('click', function() {
+        document.querySelector('form[action="/DiagnosisResult"]').submit();
+    });
         // Initialize Select2 on existing dropdown elements
         $('.form-select').select2();
 

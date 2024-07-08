@@ -2,6 +2,7 @@ package com.SmartHealthRemoteSystem.SHSR.SendDailyHealth;
 
 import com.SmartHealthRemoteSystem.SHSR.Prediction.Prediction;
 import com.SmartHealthRemoteSystem.SHSR.ReadSensorData.SensorData;
+import com.SmartHealthRemoteSystem.SHSR.Service.DiagnosisService;
 import com.SmartHealthRemoteSystem.SHSR.Service.DoctorService;
 import com.SmartHealthRemoteSystem.SHSR.Service.HealthStatusService;
 import com.SmartHealthRemoteSystem.SHSR.Service.PatientService;
@@ -11,6 +12,7 @@ import com.SmartHealthRemoteSystem.SHSR.Service.SymptomsService;
 import com.SmartHealthRemoteSystem.SHSR.Symptoms.Symptoms;
 import com.SmartHealthRemoteSystem.SHSR.User.Doctor.Doctor;
 import com.SmartHealthRemoteSystem.SHSR.User.Patient.Patient;
+import com.SmartHealthRemoteSystem.SHSR.ProvideDiagnosis.Diagnosis;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.Firestore;
@@ -37,6 +39,12 @@ import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Arrays;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
+import java.time.ZonedDateTime;
 
 @Controller
 @RequestMapping("/Health-status")
@@ -47,13 +55,15 @@ public class SendHealthStatusController {
     private final SensorDataService sensorDataService;
     private final DoctorService doctorService;
     private final PredictionService predictionService;
+    private final DiagnosisService diagnosisService;
     
-    public SendHealthStatusController(HealthStatusService healthStatusService, PatientService patientService, SensorDataService sensorDataService, DoctorService doctorService, PredictionService predictionService) {
+    public SendHealthStatusController(HealthStatusService healthStatusService, PatientService patientService, SensorDataService sensorDataService, DoctorService doctorService, PredictionService predictionService, DiagnosisService diagnosisService) {
         this.healthStatusService = healthStatusService;
         this.patientService=patientService;
         this.sensorDataService=sensorDataService;
         this.doctorService = doctorService;
         this.predictionService = predictionService;
+        this.diagnosisService = diagnosisService;
     }
 
     @PostMapping("/sendHealthStatus")
@@ -87,10 +97,19 @@ public class SendHealthStatusController {
         List<String> formattedSymptoms = new ArrayList<>();
         List<String> sensorBasedSymptoms = new ArrayList<>(); // Track symptoms added based on sensor data
     
+        boolean hasSubmittedToday = false;
+
         if (predictions.isPresent()) {
             Prediction prediction = predictions.get();
             List<String> symptoms = prediction.getSymptomsList();
             formattedSymptoms = formatSymptoms(symptoms);
+            String timestamp = prediction.getTimestamp();
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_ZONED_DATE_TIME;
+            ZonedDateTime predictionDateTime = ZonedDateTime.parse(timestamp, formatter);
+            ZonedDateTime predictionDateTimeInLocalZone = predictionDateTime.withZoneSameInstant(ZoneId.systemDefault());
+            LocalDate predictionDate = predictionDateTimeInLocalZone.toLocalDate();
+            LocalDate today = LocalDate.now(ZoneId.systemDefault());
+            hasSubmittedToday = predictionDate.equals(today);
         }
     
         SensorData sensorData = sensorDataService.getSensorData(patient.getSensorDataId());
@@ -123,28 +142,66 @@ public class SendHealthStatusController {
         }
     
         // Add formatted symptoms and sensor-based symptoms to the model
+        model.addAttribute("hasSubmittedToday", hasSubmittedToday);
         model.addAttribute("formattedSymptoms", formattedSymptoms);
         model.addAttribute("sensorBasedSymptoms", sensorBasedSymptoms);
         System.out.println("Formatted Symptoms: " + formattedSymptoms);
-    
+
         return "sendDailyHealthSymptom";
     }
     
     
     @GetMapping("/Diagnosis")
-    public String showDiagnosisPage(@RequestParam("patientId") String patientId, @RequestParam("doctorId") String doctorId, Model model) throws ExecutionException, InterruptedException {
-
+    public String showDiagnosisPage(@RequestParam("patientId") String patientId, 
+                                    @RequestParam("doctorId") String doctorId, 
+                                    Model model,
+                                    @RequestParam(defaultValue = "0") int pageNo, 
+                                    @RequestParam(defaultValue = "5") int pageSize, 
+                                    @RequestParam(defaultValue = "") String startDate,
+                                    @RequestParam(defaultValue = "") String endDate) throws ExecutionException, InterruptedException {
+    
         Patient patient = patientService.getPatient(patientId);
         Doctor doctor = doctorService.getDoctor(patient.getAssigned_doctor());
-
+    
         model.addAttribute("patient", patient);
         model.addAttribute("doctor", doctor);
-
-        List<Prediction> predictionList = predictionService.getListPrediction(patientId);
+    
+        List<Prediction> allpredictionList = predictionService.getListPrediction(patientId);
+    
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+    
+        // Sort the predictions based on timestamp (latest to oldest)
+        allpredictionList.sort(Comparator.comparing((Prediction p) -> LocalDateTime.parse(p.getTimestamp(), formatter)).reversed());
+    
+        // Filter the predictions based on the date range
+        if (!startDate.isEmpty() && !endDate.isEmpty()) {
+            LocalDateTime start = LocalDateTime.parse(startDate + "T00:00:00");
+            LocalDateTime end = LocalDateTime.parse(endDate + "T23:59:59");
+            allpredictionList = allpredictionList.stream()
+                    .filter(p -> {
+                        LocalDateTime timestamp = LocalDateTime.parse(p.getTimestamp(), formatter);
+                        return (timestamp.isEqual(start) || timestamp.isAfter(start)) && (timestamp.isEqual(end) || timestamp.isBefore(end));
+                    })
+                    .collect(Collectors.toList());
+        }
+    
+        int total = allpredictionList.size();
+        int startIdx = Math.min(pageNo * pageSize, total);
+        int endIdx = Math.min((pageNo + 1) * pageSize, total);
+        int startIndex = pageNo * pageSize;
+    
+        List<Prediction> predictionList = allpredictionList.subList(startIdx, endIdx);
+    
+        model.addAttribute("startIndex", startIndex);
+        model.addAttribute("currentPage", pageNo);
+        model.addAttribute("totalPages", (total + pageSize - 1) / pageSize);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
         model.addAttribute("predictionList", predictionList);
-
+    
         return "Diagnosis";
     }
+    
 
     private List<String> formatSymptoms(List<String> symptoms) {
         List<String> formattedSymptoms = new ArrayList<>();
@@ -172,6 +229,112 @@ public class SendHealthStatusController {
         return result.toString();
     }
 
+    @GetMapping("/predictionHistory")
+    public String getPredictionHistory(@RequestParam("patientId") String patientId, 
+                                    @RequestParam("doctorId") String doctorId, 
+                                    Model model,
+                                    @RequestParam(defaultValue = "0") int pageNo, 
+                                    @RequestParam(defaultValue = "5") int pageSize, 
+                                    @RequestParam(defaultValue = "") String startDate,
+                                    @RequestParam(defaultValue = "") String endDate) throws ExecutionException, InterruptedException {
+    
+        Patient patient = patientService.getPatient(patientId);
+        Doctor doctor = doctorService.getDoctor(patient.getAssigned_doctor());
+    
+        model.addAttribute("patient", patient);
+        model.addAttribute("doctor", doctor);
+    
+        List<Prediction> allpredictionList = predictionService.getListPrediction(patientId);
+        List<Diagnosis> allDiagnosisList = diagnosisService.getListDiagnosis(patientId);
+
+        model.addAttribute("allDiagnosisList", allDiagnosisList);
+    
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+    
+        // Sort the predictions based on timestamp (latest to oldest)
+        allpredictionList.sort(Comparator.comparing((Prediction p) -> LocalDateTime.parse(p.getTimestamp(), formatter)).reversed());
+    
+        // Filter the predictions based on the date range
+        if (!startDate.isEmpty() && !endDate.isEmpty()) {
+            LocalDateTime start = LocalDateTime.parse(startDate + "T00:00:00");
+            LocalDateTime end = LocalDateTime.parse(endDate + "T23:59:59");
+            allpredictionList = allpredictionList.stream()
+                    .filter(p -> {
+                        LocalDateTime timestamp = LocalDateTime.parse(p.getTimestamp(), formatter);
+                        return (timestamp.isEqual(start) || timestamp.isAfter(start)) && (timestamp.isEqual(end) || timestamp.isBefore(end));
+                    })
+                    .collect(Collectors.toList());
+        }
+    
+        int total = allpredictionList.size();
+        int startIdx = Math.min(pageNo * pageSize, total);
+        int endIdx = Math.min((pageNo + 1) * pageSize, total);
+        int startIndex = pageNo * pageSize;
+    
+        List<Prediction> predictionList = allpredictionList.subList(startIdx, endIdx);
+        List<String> allDiagnosis = allpredictionList.stream().flatMap(prediction -> prediction.getDiagnosisList().stream()).distinct().collect(Collectors.toList());
+    
+        model.addAttribute("startIndex", startIndex);
+        model.addAttribute("currentPage", pageNo);
+        model.addAttribute("totalPages", (total + pageSize - 1) / pageSize);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("predictionList", predictionList);
+        model.addAttribute("allDiagnosis", allDiagnosis);
+    
+        return "predictionHistory";
+    }
+
+    @GetMapping("/manageDiagnosis")
+    public String getManageDiagnosis(
+        @RequestParam("patientId") String patientId,
+        Model model,
+        @RequestParam(defaultValue= "0") int pageNo,
+        @RequestParam(defaultValue = "5") int pageSize,
+        @RequestParam(defaultValue = "") String startDate,
+        @RequestParam(defaultValue = "") String endDate)throws ExecutionException, InterruptedException{
+            Patient patient = patientService.getPatient(patientId);
+            Doctor doctor = doctorService.getDoctor(patient.getAssigned_doctor());
+    
+            model.addAttribute("patient", patient);
+            model.addAttribute("doctor", doctor);
+
+            List<Diagnosis> allDiagnosisList = diagnosisService.getListDiagnosis(patientId);
+            List<Prediction> allpredictionList = predictionService.getListPrediction(patientId);
+            List<String> allDiagnosis = allpredictionList.stream().flatMap(prediction -> prediction.getDiagnosisList().stream()).distinct().collect(Collectors.toList());
+            model.addAttribute("allDiagnosis", allDiagnosis);
+
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+            allDiagnosisList.sort(Comparator.comparing((Diagnosis p) -> LocalDateTime.parse(p.getTimestamp(), formatter)).reversed());
+
+        // Filter the diagnosis based on the date range
+        if (!startDate.isEmpty() && !endDate.isEmpty()) {
+            LocalDateTime start = LocalDateTime.parse(startDate + "T00:00:00");
+            LocalDateTime end = LocalDateTime.parse(endDate + "T23:59:59");
+            allDiagnosisList = allDiagnosisList.stream()
+                    .filter(p -> {
+                        LocalDateTime timestamp = LocalDateTime.parse(p.getTimestamp(), formatter);
+                        return (timestamp.isEqual(start) || timestamp.isAfter(start)) && (timestamp.isEqual(end) || timestamp.isBefore(end));
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        int total = allDiagnosisList.size();
+        int startIdx = Math.min(pageNo * pageSize, total);
+        int endIdx = Math.min((pageNo + 1) * pageSize, total);
+        int startIndex = pageNo * pageSize;
+
+        List<Diagnosis> diagnosisList = allDiagnosisList.subList(startIdx, endIdx);
+
+        model.addAttribute("startIndex", startIndex);
+        model.addAttribute("currentPage", pageNo);
+        model.addAttribute("totalPages", (total + pageSize - 1) / pageSize);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("diagnosisList", diagnosisList);
+
+        return "manageDiagnosis";
+    }
 }
 
 

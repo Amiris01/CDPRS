@@ -203,6 +203,7 @@ public class PatientController {
   
           model.addAttribute("sensorDataList",sensorData);
           model.addAttribute("patientid",patientId);
+          model.addAttribute("patient", patient);
   
           // Write the data to the document
           docRef.set(data);

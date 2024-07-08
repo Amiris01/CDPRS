@@ -1,62 +1,74 @@
-// package com.SmartHealthRemoteSystem.SHSR.ProvideDiagnosis;
+package com.SmartHealthRemoteSystem.SHSR.ProvideDiagnosis;
 
-// import javax.persistence.Entity;
-// import javax.persistence.GeneratedValue;
-// import javax.persistence.GenerationType;
-// import javax.persistence.Id;
+import java.util.List;
 
-// @Entity // This tells Hibernate to make a table out of this class
-// public class Diagnosis {
- 
-//     @Id
-//     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//     private String id; // primary key
-//     private String patientId;
-//     private String diagnosis;
+public class Diagnosis{
+  public String diagnosisId;
+  private String doctorId;
+  private String diagnosisConfirmation;
+  private String diagnosis;
+  private String remarks;
+  private String timestamp;
 
-//     // Default Constructor
-//     public Diagnosis() {
-//     }
+  public Diagnosis(){
 
-    
-//     // Parameterized Constructor
-//     public Diagnosis(String patientId, String diagnosis) {
-//         this.patientId = patientId;
-//         this.diagnosis = diagnosis;
-//     }
+  }
 
-//     // Getters and setters...
-//     public String getId() {
-//         return id;
-//     }
+  public Diagnosis(String diagnosisId,String doctorId,String diagnosisConfirmation,String diagnosis,String remarks,String timestamp){
+    this.diagnosisId= diagnosisId;
+    this.doctorId=doctorId;
+    this.diagnosisConfirmation=diagnosisConfirmation;
+    this.diagnosis=diagnosis;
+    this.remarks=remarks;
+    this.timestamp=timestamp;
+  }
 
-//     public void setId(String documentId) {
-//         this.id = documentId;
-//     }
+  public String getDiagnosisId(){
+    return diagnosisId;
+  }
 
-//     public String getPatientId() {
-//         return patientId;
-//     }
+  public void setDiagnosisId(String diagnosisId){
+    this.diagnosisId=diagnosisId;
+  }
 
-//     public void setPatientId(String patientId) {
-//         this.patientId = patientId;
-//     }
+  public String getDoctorId(){
+    return doctorId;
+  }
 
-//     public String getDiagnosis() {
-//         return diagnosis;
-//     }
+  public void setDoctorId(String doctorId){
+    this.doctorId=doctorId;
+  }
 
-//     public void setDiagnosis(String diagnosis) {
-//         this.diagnosis = diagnosis;
-//     }
+  public String getDiagnosisConfirmation(){
+    return diagnosisConfirmation;
+  }
 
-//     // toString method
-//     @Override
-//     public String toString() {
-//         return "Diagnosis{" +
-//                 "id=" + id +
-//                 ", patientId='" + patientId + '\'' +
-//                 ", diagnosis='" + diagnosis + '\'' +
-//                 '}';
-//     }
-// }
+  public void setDiagnosisConfirmation(String diagnosisConfirmation){
+    this.diagnosisConfirmation=diagnosisConfirmation;
+  }
+
+  public String getDiagnosis(){
+    return diagnosis;
+  }
+
+  public void setDiagnosis(String diagnosis){
+    this.diagnosis=diagnosis;
+  }
+
+  public String getRemarks(){
+    return remarks;
+  }
+
+  public void setRemarks(String remarks){
+    this.remarks=remarks;
+  }
+
+  public String getTimestamp(){
+    return timestamp;
+  }
+
+  public void setTimestamp(String timestamp){
+    this.timestamp=timestamp;
+  }
+
+}
