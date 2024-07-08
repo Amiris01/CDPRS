@@ -159,6 +159,9 @@ public class PatientRepository implements SHSRDAO<Patient> {
         if (!(patient.getContact().isEmpty())) {
             dbFirestore.collection(COL_NAME).document(patient.getUserId()).update("contact", patient.getContact());
         }
+        if (!(patient.getSensorDataId().isEmpty())) {
+            dbFirestore.collection(COL_NAME).document(patient.getUserId()).update("sensorDataId", patient.getSensorDataId());
+        }
 
         User user = new User(patient.getUserId(), patient.getName(), patient.getPassword(), patient.getContact(), patient.getRole(), patient.getEmail());
         return userRepository.update(user);

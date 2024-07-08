@@ -224,8 +224,8 @@ editUserBtn.forEach((e) => {
             console.log("Editing patient");
             userForm[0].className = "extraForm form-group activeForm";
             radioFormInput[1].checked = true;
-            document.getElementById("address").value = cells[4].innerText;
-            document.getElementById("emergencyContact").value = cells[5].innerText;
+            document.getElementById("address").value = cells[5].innerText;
+            document.getElementById("emergencyContact").value = cells[4].innerText;
             document.getElementById("sensorId").value = cells[6].innerText;
         } else if (editClassName === 'btn btn-warning editUserBtn editDoctor') {
             // Debugging specific info of doctor

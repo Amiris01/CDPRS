@@ -99,9 +99,16 @@
                                     <button>Submit</button>
                                 </form>
 
-                                <a href="javascript: document.healthStatusForm.submit()"  class="list-group-item m-3 d-flex justify-content-center align-items-center bg-primary bg-opacity-50 rounded" style=" height: 75px;">
-                                    <h3>Send Health Symptoms to Doctor</h3>
-                                </a>
+                                <button type="button"
+                                th:disabled="${patient.assigned_doctor == '' and patient.sensorDataId == ''}"
+                                onclick="document.healthStatusForm.submit()"
+                                class="list-group-item m-3 d-flex justify-content-center align-items-center bg-primary bg-opacity-50 rounded"
+                                style="height: 75px; border: none; background: none; padding: 0;">
+                            <h3>Send Health Symptoms to Doctor</h3>
+                        </button>
+                        <div th:if="${patient.assigned_doctor == '' and patient.sensorDataId == ''}" class="alert alert-warning text-center" role="alert">
+                            You cannot send health symptoms because you are not assigned to a doctor and you do not have sensor data.
+                        </div>
 
 
                             </div>
