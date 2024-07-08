@@ -42,25 +42,21 @@
                         <hr>
                         <ul class="nav nav-pills flex-column mb-auto">
                             <li class="nav-item">
-                                <a href="#" class="nav-link active" aria-current="page">
+                                <a href="/patient" class="nav-link link-dark f" aria-current="page">
                                     Dashboard
                                 </a>
                             </li>
                             <li>
-                                <!-- <form th:action="@{/viewPatientHealthStatus/b(patientId=${patient.userId},doctorId=${doctor.userId})}" method="post" name="viewPatient" class="viewPatientForm">
-                                    <input type="text" th:value="${doctor.userId}" th:name="doctorId" id="doctorId"  hidden="hidden">
-                                    <input type="text" th:value="${patient.userId}" th:name="patientId" id="patientId" hidden="hidden"> -->
-                                    <a role="button" class="nav-link link-dark f">View</a> 
-                                <!-- </form> -->
-    
-                            </li>
+                                <!--<a role="button" th:href="@{/viewPatientHealthStatus/b(patientId=${patient.userId},doctorId=${doctor.userId},pageNo=1)}" class="nav-link link-dark f">View</a> -->
+                                <a role="button" th:href="@{/Health-status/viewDiagnosis(patientId=${patient.userId})}" class="nav-link link-dark f">View Diagnosis</a> 
+                        </li>
                             <li>
-                                <a class="nav-link link-dark f" name="editProfile">
+                                <a class="nav-link link-dark f" name="editProfile" th:href="@{/patient/editProfile(patientId=${patient.userId})}">
                                     Edit Profile
                                 </a>
                             </li>
                             <li>
-                                <a  class="nav-link link-dark f" name="HealthCondition">Health Condition</a>
+                                <a th:href="@{/patient/sensorDashboard(patientId=${patient.userId})}" class="nav-link active " name="HealthCondition">Health Condition</a>
                                     
                                 </a>
                             </li>

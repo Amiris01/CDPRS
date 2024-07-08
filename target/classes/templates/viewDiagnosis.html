@@ -22,7 +22,7 @@
             width: 400px; 
         }
     </style>
-    <title>Prediction History</title>
+    <title>View Diagnosis</title>
 </head>
 <body>
 
@@ -49,7 +49,7 @@
                         </li>
                         <li>
                             <!--<a role="button" th:href="@{/viewPatientHealthStatus/b(patientId=${patient.userId},doctorId=${doctor.userId},pageNo=1)}" class="nav-link link-dark f">View</a> -->
-                            <a role="button" th:href="@{/Health-status/viewDiagnosis(patientId=${patient.userId})}" class="nav-link link-dark f">View Diagnosis</a> 
+                            <a role="button" th:href="@{/Health-status/viewDiagnosis(patientId=${patient.userId})}" class="nav-link active">View Diagnosis</a> 
                     </li>
                         <li>
                             <a class="nav-link link-dark f" name="editProfile" th:href="@{/patient/editProfile(patientId=${patient.userId})}">
@@ -71,12 +71,11 @@
                 </div>
             </div>
             <div class="col-9">
-                <h1 d-flex justify-content-start style="margin-bottom:20px;">Prediction History</h1>
+                <h1 d-flex justify-content-start style="margin-bottom:20px;">View Diagnosis</h1>
 
                 <!-- search button -->
-                <form th:action="@{/Health-status/Diagnosis}" method="get" class="row g-3">
+                <form th:action="@{/Health-status/viewDiagnosis}" method="get" class="row g-3">
                     <input type="hidden" name="patientId" th:value="${patient.userId}">
-                    <input type="hidden" name="doctorId" th:value="${doctor.userId}">
                     <input type="hidden" name="pageNo" th:value="${currentPage}">
                     <input type="hidden" name="pageSize" th:value="${pageSize}">
                     <div class="col-md-6">
@@ -98,23 +97,26 @@
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Symptoms</th>
-                                <th>Predicted Diseases with Probabilities</th>
+                                <th>Doctor</th>
+                                <th>Diagnosis</th>
+                                <th>Doctor's Remarks</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr th:if="${#lists.isEmpty(predictionList)}">
-                                <td colspan="3" class="text-center">No prediction made</td>
+                            <tr th:if="${#lists.isEmpty(diagnosisList)}">
+                                <td colspan="4" class="text-center">No diagnosis</td>
                             </tr>
-                            <tr th:each="prediction, stat : ${predictionList}">
-                                <td class="timestamp" th:text="${prediction.timestamp}"></td>
+                            <tr th:each="diagnosis, stat : ${diagnosisList}">
+                                <td class="timestamp" th:text="${diagnosis.timestamp}"></td>
                                 <td>
-                                    <div class="symptoms-list" th:text="${prediction.symptomsList}"></div>
+                                    <div th:text="${doctor.name}"></div>
                                 </td>
                                 <td>
-                                    <div class="diagnosis-probability-list" th:text="${prediction.diagnosisList}"></div>
-                                    <div class="probability-list" th:text="${prediction.probabilityList}" hidden></div>
+                                    <div th:text="${diagnosis.diagnosis}"></div>
                                 </td>
+                                <td>
+                                  <div th:text="${diagnosis.remarks}"></div>
+                              </td>
                             </tr>
                         </tbody>
                     </table>
@@ -124,13 +126,13 @@
                 <nav aria-label="Prediction history navigation" style="margin-top: 20px;">
                     <ul class="pagination justify-content-center">
                         <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled' : ''">
-                            <a class="page-link" th:href="@{/Health-status/Diagnosis(patientId=${patient.userId}, doctorId=${doctor.userId},pageNo=${currentPage - 1}, pageSize=${pageSize}, startDate=${startDate}, endDate=${endDate})}">Previous</a>
+                            <a class="page-link" th:href="@{/Health-status/viewDiagnosis(patientId=${patient.userId},pageNo=${currentPage - 1}, pageSize=${pageSize}, startDate=${startDate}, endDate=${endDate})}">Previous</a>
                         </li>
                         <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" th:classappend="${i == currentPage} ? 'active' : ''">
-                            <a class="page-link" th:href="@{/Health-status/Diagnosis(patientId=${patient.userId}, doctorId=${doctor.userId},pageNo=${i}, pageSize=${pageSize}, startDate=${startDate}, endDate=${endDate})}" th:text="${i + 1}"></a>
+                            <a class="page-link" th:href="@{/Health-status/viewDiagnosis(patientId=${patient.userId},pageNo=${i}, pageSize=${pageSize}, startDate=${startDate}, endDate=${endDate})}" th:text="${i + 1}"></a>
                         </li>
                         <li class="page-item" th:classappend="${currentPage + 1 == totalPages} ? 'disabled' : ''">
-                            <a class="page-link" th:href="@{/Health-status/Diagnosis(patientId=${patient.userId}, doctorId=${doctor.userId}, pageNo=${currentPage + 1}, pageSize=${pageSize}, startDate=${startDate}, endDate=${endDate})}">Next</a>
+                            <a class="page-link" th:href="@{/Health-status/viewDiagnosis(patientId=${patient.userId}, pageNo=${currentPage + 1}, pageSize=${pageSize}, startDate=${startDate}, endDate=${endDate})}">Next</a>
                         </li>
                     </ul>
                 </nav>
@@ -168,30 +170,6 @@
                 second: "2-digit"
             });
             element.textContent = formattedTimestamp;
-        });
-
-        document.querySelectorAll('.symptoms-list').forEach(function(element) {
-            const symptoms = element.textContent
-                .replace(/[\[\]]/g, '') // Remove square brackets
-                .split(', ') // Split by comma and space
-                .map(symptom => symptom.replace(/_/g, ' ')) // Replace underscores with spaces
-                .map(symptom => symptom.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')); // Capitalize each word
-
-            const formattedSymptoms = symptoms.map(symptom => `<li>${symptom}</li>`).join('');
-            element.innerHTML = `<ul>${formattedSymptoms}</ul>`;
-        });
-
-        document.querySelectorAll('.diagnosis-probability-list').forEach(function(element) {
-            const diagnoses = element.textContent.replace(/[\[\]]/g, '').split(', ');
-            const probabilities = element.nextElementSibling.textContent.replace(/[\[\]]/g, '').split(', ');
-
-            const formattedDiagnosisProbabilities = diagnoses.map((diagnosis, index) => {
-                const formattedDiagnosis = diagnosis.replace(/_/g, ' ').split(' ')
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-                return `<li>${formattedDiagnosis}: ${parseFloat(probabilities[index]).toFixed(2)}%</li>`;
-            }).join('');
-
-            element.innerHTML = `<ul>${formattedDiagnosisProbabilities}</ul>`;
         });
     });
 </script>

@@ -335,6 +335,54 @@ public class SendHealthStatusController {
 
         return "manageDiagnosis";
     }
+
+    @GetMapping("/viewDiagnosis")
+    public String getViewDiagnosis(
+        @RequestParam("patientId") String patientId,
+        Model model,
+        @RequestParam(defaultValue= "0") int pageNo,
+        @RequestParam(defaultValue = "5") int pageSize,
+        @RequestParam(defaultValue = "") String startDate,
+        @RequestParam(defaultValue = "") String endDate)throws ExecutionException, InterruptedException{
+            Patient patient = patientService.getPatient(patientId);
+            Doctor doctor = doctorService.getDoctor(patient.getAssigned_doctor());
+    
+            model.addAttribute("patient", patient);
+            model.addAttribute("doctor", doctor);
+
+            List<Diagnosis> allDiagnosisList = diagnosisService.getListDiagnosis(patientId);
+
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+            allDiagnosisList.sort(Comparator.comparing((Diagnosis p) -> LocalDateTime.parse(p.getTimestamp(), formatter)).reversed());
+
+        // Filter the diagnosis based on the date range
+        if (!startDate.isEmpty() && !endDate.isEmpty()) {
+            LocalDateTime start = LocalDateTime.parse(startDate + "T00:00:00");
+            LocalDateTime end = LocalDateTime.parse(endDate + "T23:59:59");
+            allDiagnosisList = allDiagnosisList.stream()
+                    .filter(p -> {
+                        LocalDateTime timestamp = LocalDateTime.parse(p.getTimestamp(), formatter);
+                        return (timestamp.isEqual(start) || timestamp.isAfter(start)) && (timestamp.isEqual(end) || timestamp.isBefore(end));
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        int total = allDiagnosisList.size();
+        int startIdx = Math.min(pageNo * pageSize, total);
+        int endIdx = Math.min((pageNo + 1) * pageSize, total);
+        int startIndex = pageNo * pageSize;
+
+        List<Diagnosis> diagnosisList = allDiagnosisList.subList(startIdx, endIdx);
+
+        model.addAttribute("startIndex", startIndex);
+        model.addAttribute("currentPage", pageNo);
+        model.addAttribute("totalPages", (total + pageSize - 1) / pageSize);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("diagnosisList", diagnosisList);
+
+        return "viewDiagnosis";
+    }
 }
 
 

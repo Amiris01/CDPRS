@@ -44,12 +44,23 @@
                     <hr>
                     <ul class="nav nav-pills flex-column mb-auto">
                         <li class="nav-item">
-                            <a href="#" class="nav-link active" aria-current="page">
+                            <a href="/patient" class="nav-link link-dark f" aria-current="page">
                                 Dashboard
                             </a>
                         </li>
                         <li>
-                            <a th:href="@{Diagnosis(patientId=${patient.userId}, doctorId=${doctor.userId}, pageNo=0)}" class="nav-link link-dark f">Prediction History</a>
+                                <!--<a role="button" th:href="@{/viewPatientHealthStatus/b(patientId=${patient.userId},doctorId=${doctor.userId},pageNo=1)}" class="nav-link link-dark f">View</a> -->
+                                <a role="button" th:href="@{/Health-status/viewDiagnosis(patientId=${patient.userId})}" class="nav-link link-dark f">View Diagnosis</a> 
+                        </li>
+                        <li>
+                            <a th:href="@{/patient/editProfile(patientId=${patient.userId})}" class="nav-link link-dark f" name="editProfile">
+                                Edit Profile
+                            </a>
+                        </li>
+                        <li>
+                            <a th:href="@{/patient/sensorDashboard(patientId=${patient.userId})}" class="nav-link link-dark f" name="HealthCondition">Health Condition</a>
+                                
+                            </a>
                         </li>
                         <li>
                             <form th:action="@{/logout}" method="post" hidden="true" name="logoutForm">
@@ -75,7 +86,8 @@
                                 <p th:text="${doctor.position}">Heart Specialist</p>
                             </div>
                         </div>
-                        <div class="col ">
+                        <div class="col d-flex align-items-start justify-content-end">
+                            <a th:href="@{Diagnosis(patientId=${patient.userId}, doctorId=${doctor.userId}, pageNo=0)}" class="btn btn-secondary mt-3">Prediction History</a>
                         </div>
                     </div>
                     <div class="row m-5">
