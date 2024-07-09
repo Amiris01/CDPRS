@@ -113,9 +113,9 @@
                                                         </select>
                                                     </td>
                                                 </tr>
-                                
+                                        
                                                 <!-- Handles the case when predictions are present and lists symptoms from predictions or sensor data if present -->
-                                                <tr th:each="symptom : ${predictions != null && predictions.symptomsList != null && !predictions.symptomsList.isEmpty() ? predictions.symptomsList : formattedSymptoms}" 
+                                                <tr th:each="symptom, iter : ${formattedSymptoms}" 
                                                     th:if="${predictions != null && predictions.symptomsList != null && !predictions.symptomsList.isEmpty() || (sensorData != null && !formattedSymptoms.isEmpty())}" 
                                                     id="symptomRow1">
                                                     <td>
@@ -129,7 +129,7 @@
                                                     </td>
                                                 </tr>
                                             </tbody>                                                                             
-                                        </table>
+                                        </table>                                                                               
                                         <input type="hidden" th:value="${patient.userId}" th:name="patientId">
                                     
                                         <div class="text-center">

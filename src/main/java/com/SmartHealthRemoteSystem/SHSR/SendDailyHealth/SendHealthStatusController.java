@@ -33,6 +33,8 @@ import org.springframework.http.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -45,6 +47,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.time.ZonedDateTime;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/Health-status")
@@ -90,19 +93,19 @@ public class SendHealthStatusController {
         Doctor doctor = doctorService.getDoctor(patient.getAssigned_doctor());
         model.addAttribute("patient", patient);
         model.addAttribute("doctor", doctor);
-    
+
         Optional<Prediction> predictions = predictionService.getRecentPrediction(patientId);
         model.addAttribute("predictions", predictions.orElse(null));
-    
-        List<String> formattedSymptoms = new ArrayList<>();
-        List<String> sensorBasedSymptoms = new ArrayList<>(); // Track symptoms added based on sensor data
-    
+
+        Set<String> formattedSymptomsSet = new LinkedHashSet<>();
+        Set<String> sensorBasedSymptomsSet = new LinkedHashSet<>(); // Track symptoms added based on sensor data
+
         boolean hasSubmittedToday = false;
 
         if (predictions.isPresent()) {
             Prediction prediction = predictions.get();
             List<String> symptoms = prediction.getSymptomsList();
-            formattedSymptoms = formatSymptoms(symptoms);
+            formattedSymptomsSet.addAll(symptoms);
             String timestamp = prediction.getTimestamp();
             DateTimeFormatter formatter = DateTimeFormatter.ISO_ZONED_DATE_TIME;
             ZonedDateTime predictionDateTime = ZonedDateTime.parse(timestamp, formatter);
@@ -111,46 +114,48 @@ public class SendHealthStatusController {
             LocalDate today = LocalDate.now(ZoneId.systemDefault());
             hasSubmittedToday = predictionDate.equals(today);
         }
-    
+
         SensorData sensorData = sensorDataService.getSensorData(patient.getSensorDataId());
         model.addAttribute("sensorData", sensorData);
-    
-        if (sensorData.getBodyTemperature() > 37.5) {
-            List<String> symptoms = Arrays.asList("high_fever", "chills", "sweating", "shivering");
-            formattedSymptoms.addAll(formatSymptoms(symptoms));
-            sensorBasedSymptoms.addAll(formatSymptoms(symptoms));
+
+        if (sensorData.getBodyTemperature() > 38.5) {
+            List<String> symptoms = Arrays.asList("high_fever", "chills", "sweating", "shivering", "unsteadiness", "dizziness", "lethargy");
+            sensorBasedSymptomsSet.addAll(symptoms);
         }
         if (sensorData.getBodyTemperature() < 35) {
-            List<String> symptoms = Arrays.asList("shivering");
-            formattedSymptoms.addAll(formatSymptoms(symptoms));
-            sensorBasedSymptoms.addAll(formatSymptoms(symptoms));
+            List<String> symptoms = Arrays.asList("shivering", "restlessness", "breathlessness");
+            sensorBasedSymptomsSet.addAll(symptoms);
         }
         if (sensorData.getOxygenReading() < 90) {
-            List<String> symptoms = Arrays.asList("breathlessness", "dizziness", "fatigue");
-            formattedSymptoms.addAll(formatSymptoms(symptoms));
-            sensorBasedSymptoms.addAll(formatSymptoms(symptoms));
+            List<String> symptoms = Arrays.asList("breathlessness", "dizziness", "fatigue", "cough", "headache");
+            sensorBasedSymptomsSet.addAll(symptoms);
         }
         if (sensorData.getHeart_Rate() > 100) {
-            List<String> symptoms = Arrays.asList("high_heart_rate", "chest_pain", "breathlessness", "sweating");
-            formattedSymptoms.addAll(formatSymptoms(symptoms));
-            sensorBasedSymptoms.addAll(formatSymptoms(symptoms));
+            List<String> symptoms = Arrays.asList("high_heart_rate", "chest_pain", "breathlessness", "fatigue");
+            sensorBasedSymptomsSet.addAll(symptoms);
         }
         if (sensorData.getHeart_Rate() < 60) {
-            List<String> symptoms = Arrays.asList("dizziness", "fatigue");
-            formattedSymptoms.addAll(formatSymptoms(symptoms));
-            sensorBasedSymptoms.addAll(formatSymptoms(symptoms));
+            List<String> symptoms = Arrays.asList("dizziness", "fatigue", "muscle_weakness", "blurred_and_distorted_vision", "breathlessness", "cough");
+            sensorBasedSymptomsSet.addAll(symptoms);
         }
-    
-        // Add formatted symptoms and sensor-based symptoms to the model
+
+        // Combine sensor-based symptoms first, followed by other symptoms, avoiding duplicates
+        Set<String> combinedSymptomsSet = new LinkedHashSet<>();
+        combinedSymptomsSet.addAll(sensorBasedSymptomsSet);
+        combinedSymptomsSet.addAll(formattedSymptomsSet);
+
+        // Convert set to list
+        List<String> combinedSymptoms = new ArrayList<>(combinedSymptomsSet);
+
+        // Add combined symptoms and sensor-based symptoms to the model
         model.addAttribute("hasSubmittedToday", hasSubmittedToday);
-        model.addAttribute("formattedSymptoms", formattedSymptoms);
-        model.addAttribute("sensorBasedSymptoms", sensorBasedSymptoms);
-        System.out.println("Formatted Symptoms: " + formattedSymptoms);
+        model.addAttribute("formattedSymptoms", combinedSymptoms);
+        model.addAttribute("sensorBasedSymptoms", new ArrayList<>(sensorBasedSymptomsSet));
+        System.out.println("Combined Symptoms: " + combinedSymptoms);
 
         return "sendDailyHealthSymptom";
     }
-    
-    
+        
     @GetMapping("/Diagnosis")
     public String showDiagnosisPage(@RequestParam("patientId") String patientId, 
                                     @RequestParam("doctorId") String doctorId, 
